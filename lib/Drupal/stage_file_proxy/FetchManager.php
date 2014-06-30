@@ -7,8 +7,9 @@
 
 namespace Drupal\stage_file_proxy;
 
-use Drupal\Component\Utility\Url;
-use Guzzle\Http\ClientInterface;
+use Drupal\Component\Utility\UrlHelper;
+use Drupal\Core\StreamWrapper\PublicStream;
+use GuzzleHttp\ClientInterface;
 
 class FetchManager implements FetchManagerInterface {
 
@@ -21,10 +22,8 @@ class FetchManager implements FetchManagerInterface {
    */
   public function fetch($server, $remote_file_dir, $relative_path) {
     // Fetch remote file.
-    $url = $server . '/' . Url::encodePath($remote_file_dir . '/' . $relative_path);
-    $response = $this->client
-      ->get($url)
-      ->send();
+    $url = $server . '/' . UrlHelper::encodePath($remote_file_dir . '/' . $relative_path);
+    $response = $this->client->get($url);
 
     if ($response->getStatusCode() == 200) {
       // Prepare local target directory and save downloaded file.
@@ -42,7 +41,7 @@ class FetchManager implements FetchManagerInterface {
    * {@inheritdoc}
    */
   public function filePublicPath() {
-    return settings()->get('file_public_path', conf_path() . '/files');
+    return PublicStream::basePath();
   }
 
   /**

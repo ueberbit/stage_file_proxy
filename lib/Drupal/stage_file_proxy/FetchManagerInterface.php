@@ -7,7 +7,8 @@
 
 namespace Drupal\stage_file_proxy;
 
-use Guzzle\Http\ClientInterface;
+
+use GuzzleHttp\ClientInterface;
 
 interface FetchManagerInterface {
 
