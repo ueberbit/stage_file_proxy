@@ -7,4 +7,8 @@ services:
     class: Drupal\stage_file_proxy\EventSubscriber\ProxySubscriber
     tags:
       - { name: event_subscriber }
-    arguments: ['@stage_file_proxy.fetch_manager', 'logger']
+    arguments: ['@stage_file_proxy.fetch_manager', '@logger.channel.stage_file_proxy']
+
+  logger.channel.stage_file_proxy:
+    parent: logger.channel_base
+    arguments: ['stage_file_proxy']

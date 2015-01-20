@@ -51,7 +51,7 @@ class ProxySubscriber implements EventSubscriberInterface {
   /**
    * Fetch the file according the its origin.
    *
-   * @param Symfony\Component\HttpKernel\Event\GetResponseEvent $event
+   * @param \Symfony\Component\HttpKernel\Event\GetResponseEvent $event
    *   The Event to process.
    */
   public function checkFileOrigin(GetResponseEvent $event) {
