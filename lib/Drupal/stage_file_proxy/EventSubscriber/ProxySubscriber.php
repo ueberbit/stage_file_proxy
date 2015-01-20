@@ -7,15 +7,14 @@
 
 namespace Drupal\stage_file_proxy\EventSubscriber;
 
+use Drupal\Component\Utility\Unicode;
 use Drupal\Component\Utility\UrlHelper;
-use Symfony\Component\HttpFoundation\Response;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-
 use Drupal\stage_file_proxy\FetchManagerInterface;
-use Drupal\Component\Utility\String;
 
 /**
  * Stage file proxy subscriber for controller requests.
@@ -25,18 +24,28 @@ class ProxySubscriber implements EventSubscriberInterface {
   /**
    * The manager used to fetch the file against.
    *
-   * @var \Drupal\stage_file_proxy\FetchManager
+   * @var \Drupal\stage_file_proxy\FetchManagerInterface
    */
   protected $manager;
 
   /**
+   * The logger.
+   *
+   * @var LoggerInterface
+   */
+  protected $logger;
+
+  /**
    * Construct the FetchManager.
    *
-   * @param \Drupal\stage_file_proxy\FetchManager $manager
+   * @param \Drupal\stage_file_proxy\FetchManagerInterface $manager
    *   The manager used to fetch the file against.
+   *
+   * @param \Psr\Log\LoggerInterface $logger
    */
-  public function __construct(FetchManagerInterface $manager) {
+  public function __construct(FetchManagerInterface $manager, LoggerInterface $logger) {
     $this->manager = $manager;
+    $this->logger = $logger;
   }
 
   /**
@@ -59,7 +68,7 @@ class ProxySubscriber implements EventSubscriberInterface {
       $remote_file_dir = $file_dir;
     }
 
-    $relative_path = drupal_substr(request_path(), drupal_strlen($file_dir) + 1);
+    $relative_path = Unicode::substr(request_path(), Unicode::strlen($file_dir) + 1);
 
     // Get the origin server.
     $server = \Drupal::config('stage_file_proxy.settings')->get('origin');
@@ -78,7 +87,7 @@ class ProxySubscriber implements EventSubscriberInterface {
       $query_parameters = UrlHelper::filterQueryParameters($query);
 
       if (\Drupal::config('stage_file_proxy.settings')->get('hotlink')) {
-        $location = url("$server/$remote_file_dir/$relative_path", array(
+        $location = _url("$server/$remote_file_dir/$relative_path", array(
           'query' => $query_parameters,
           'absolute' => TRUE,
         ));
@@ -87,12 +96,12 @@ class ProxySubscriber implements EventSubscriberInterface {
       }
       elseif ($this->manager->fetch($server, $remote_file_dir, $relative_path)) {
         // Refresh this request & let the web server work out mime type, etc.
-        $location = url(request_path(), array('query' => $query_parameters));
+        $location = _url(request_path(), array('query' => $query_parameters));
         header("Location: $location");
         exit;
       }
       else {
-        watchdog('stage_file_proxy', 'Stage File Proxy encountered an unknown error by retrieving file @file', array('@file' => $server . '/' . drupal_encode_path($remote_file_dir . '/' . $relative_path)), WATCHDOG_ERROR);
+        $this->logger->error('Stage File Proxy encountered an unknown error by retrieving file @file', array('@file' => $server . '/' . UrlHelper::encodePath($remote_file_dir . '/' . $relative_path)));
         throw new NotFoundHttpException();
       }
     }

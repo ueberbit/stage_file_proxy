@@ -1,4 +1,4 @@
 hotlink: false
-origin: false
+origin: ''
 origin_dir: false
 use_imagecache_root: true
