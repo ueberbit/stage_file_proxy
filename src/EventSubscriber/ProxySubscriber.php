@@ -59,7 +59,7 @@ class ProxySubscriber implements EventSubscriberInterface {
     $file_dir = $this->manager->filePublicPath();
     $uri = $event->getRequest()->getPathInfo();
 
-    $uri = Unicode::substr($uri, 1, Unicode::strlen($uri) - 1);
+    $uri = Unicode::substr($uri, 1);
 
     if (strpos($uri, '' . $file_dir) !== 0) {
       return;
