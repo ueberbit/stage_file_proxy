@@ -9,6 +9,7 @@ namespace Drupal\stage_file_proxy\EventSubscriber;
 
 use Drupal\Component\Utility\Unicode;
 use Drupal\Component\Utility\UrlHelper;
+use Drupal\Core\Url;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
@@ -56,7 +57,11 @@ class ProxySubscriber implements EventSubscriberInterface {
    */
   public function checkFileOrigin(GetResponseEvent $event) {
     $file_dir = $this->manager->filePublicPath();
-    if (strpos(request_path(), $file_dir) !== 0) {
+    $uri = $event->getRequest()->getPathInfo();
+
+    $uri = Unicode::substr($uri, 1);
+
+    if (strpos($uri, '' . $file_dir) !== 0) {
       return;
     }
 
@@ -68,7 +73,7 @@ class ProxySubscriber implements EventSubscriberInterface {
       $remote_file_dir = $file_dir;
     }
 
-    $relative_path = Unicode::substr(request_path(), Unicode::strlen($file_dir) + 1);
+    $relative_path = Unicode::substr($uri, Unicode::strlen($file_dir) + 1);
 
     // Get the origin server.
     $server = \Drupal::config('stage_file_proxy.settings')->get('origin');
@@ -87,23 +92,25 @@ class ProxySubscriber implements EventSubscriberInterface {
       $query_parameters = UrlHelper::filterQueryParameters($query);
 
       if (\Drupal::config('stage_file_proxy.settings')->get('hotlink')) {
-        $location = _url("$server/$remote_file_dir/$relative_path", array(
+
+        $location = Url::fromUri("$server/$remote_file_dir/$relative_path", array(
           'query' => $query_parameters,
           'absolute' => TRUE,
         ));
-        header("Location: $location");
-        exit;
+
       }
       elseif ($this->manager->fetch($server, $remote_file_dir, $relative_path)) {
         // Refresh this request & let the web server work out mime type, etc.
-        $location = _url(request_path(), array('query' => $query_parameters));
-        header("Location: $location");
-        exit;
+
+        $location = '/' . $uri;
       }
       else {
         $this->logger->error('Stage File Proxy encountered an unknown error by retrieving file @file', array('@file' => $server . '/' . UrlHelper::encodePath($remote_file_dir . '/' . $relative_path)));
         throw new NotFoundHttpException();
       }
+
+      header("Location: $location");
+      exit;
     }
   }
 
