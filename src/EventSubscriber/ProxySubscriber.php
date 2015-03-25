@@ -121,7 +121,8 @@ class ProxySubscriber implements EventSubscriberInterface {
    *   An array of event listener definitions.
    */
   static function getSubscribedEvents() {
-    $events[KernelEvents::REQUEST][] = array('checkFileOrigin');
+    // Priority 240 is after ban middleware but before page cache.
+    $events[KernelEvents::REQUEST][] = array('checkFileOrigin', 240);
     return $events;
   }
 
