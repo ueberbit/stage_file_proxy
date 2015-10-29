@@ -101,8 +101,10 @@ class ProxySubscriber implements EventSubscriberInterface {
       }
       elseif ($this->manager->fetch($server, $remote_file_dir, $relative_path)) {
         // Refresh this request & let the web server work out mime type, etc.
-
-        $location = '/' . $uri;
+        $location = Url::fromUri('base://' . $uri, array(
+          'query' => $query_parameters,
+          'absolute' => TRUE,
+        ))->toString();
       }
       else {
         $this->logger->error('Stage File Proxy encountered an unknown error by retrieving file @file', array('@file' => $server . '/' . UrlHelper::encodePath($remote_file_dir . '/' . $relative_path)));
